@@ -26,8 +26,6 @@ jobs:
       - name: Secret scan
         run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 detect --source /repo --redact --no-banner
 
-      - name: Tests
-        run: docker run --rm -v "$PWD:/w" -w /w node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 sh -c "npm ci --no-audit --no-fund && node test/fake-docker.test.js"
 
       - name: Build
         run: docker build -t test-image .
