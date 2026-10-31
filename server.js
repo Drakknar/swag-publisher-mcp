@@ -58,13 +58,13 @@ function registerTools(server) {
     {
       title: "Show a site",
       description:
-        "Show one SWAG site, found by subdomain (e.g. \"sppaperless\"): its nginx config and its Authentik side: application, who may use it, Basic-auth attributes, and for OpenID apps every SSO setting the app needs (client ID, issuer/discovery URL, endpoints, scopes, claims, signing). The client secret only with show_secret=true, when the user needs it to configure the app.",
+        "Show one SWAG site, found by subdomain (e.g. \"sppaperless\"): its nginx config and its Authentik side: application, who may use it, Basic-auth attributes, and for OpenID apps every SSO setting the app needs (client ID, issuer/discovery URL, endpoints, scopes, claims, signing). The client secret only with show_secret=true, when the user needs it to configure the app; that returns a credential, so this tool isn't marked read-only.",
       inputSchema: {
         subdomain: z.string(),
         domain: z.string().optional().describe(`Defaults to ${config.domains[0]}.`),
         show_secret: z.boolean().default(false).describe("Include the OpenID client secret."),
       },
-      annotations: { readOnlyHint: true },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     wrap(async ({ subdomain, domain, show_secret }) => {
       const sub = subdomain.toLowerCase();
