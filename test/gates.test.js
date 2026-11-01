@@ -90,3 +90,53 @@ test("the marker text inside another comment doesn't lock", () => {
   write("spnote", conf("spnote", "", "# see publisher: locked sites\n"));
   assert.strictEqual(nginx.findSite("spnote").locked, false);
 });
+
+test("any spelling of the lock line locks, a sentence about it does not", () => {
+  for (const line of ["#publisher: locked", "# Publisher: Locked", "# publisher:locked", "# publisher: locked (hand edited)"]) {
+    write("splock2", conf("splock2", "", `${line}\n`));
+    assert.strictEqual(nginx.findSite("splock2").locked, true, line);
+  }
+  fs.unlinkSync(path.join(dir, "splock2.conf"));
+});
+
+test("access rules at server level or below an include count", () => {
+  const server = `server {
+    listen 443 ssl;
+    server_name spsrv.*;
+    allow 192.0.2.0/24;
+    deny all;
+    location / {
+        proxy_pass http://192.0.2.4:1000;
+    }
+}
+`;
+  assert.strictEqual(nginx.describe("x", server).access, "lan_only");
+  const below = conf("spbelow", "        include /config/nginx/proxy.conf;\n        satisfy any;\n        allow 192.0.2.0/24;\n        deny all;\n");
+  assert.strictEqual(nginx.describe("x", below).access, "lan_bypass");
+  assert.strictEqual(nginx.describe("x", conf("spo")).access, "open");
+});
+
+test("a site limited at server level isn't taken for already public", async () => {
+  write("spsrvonly", conf("spsrvonly").replace("    location / {", "    allow 192.0.2.0/24;\n    deny all;\n    location / {"));
+  assert.match(swagError(await plan("spsrvonly")), /Public without a login is refused/);
+  fs.unlinkSync(path.join(dir, "spsrvonly.conf"));
+});
+
+test("Docker being unreachable leaves the conf as it was", async () => {
+  write("sproll", "old\n");
+  await assert.rejects(nginx.apply("sproll.conf", "new\n"), /rolled back/);
+  assert.strictEqual(fs.readFileSync(path.join(dir, "sproll.conf"), "utf-8"), "old\n");
+  await assert.rejects(nginx.remove("sproll.conf"), /rolled back/);
+  assert.strictEqual(fs.readFileSync(path.join(dir, "sproll.conf"), "utf-8"), "old\n");
+  await assert.rejects(nginx.apply("spnew2.conf", "new\n"), /rolled back/);
+  assert.strictEqual(fs.existsSync(path.join(dir, "spnew2.conf")), false);
+  fs.unlinkSync(path.join(dir, "sproll.conf"));
+});
+
+test("a plan that drops an allow range says so", async () => {
+  const old = conf("spdrop", "        satisfy any;\n        allow 192.0.2.0/24;\n        allow 172.16.0.0/12;\n        deny all;\n");
+  write("spdrop", old);
+  const r = await plan("spdrop", { auth: "authentik_proxy", lan_bypass: true });
+  assert.match(r.plan.access_warning_ranges, /172\.16\.0\.0\/12/);
+  fs.unlinkSync(path.join(dir, "spdrop.conf"));
+});
