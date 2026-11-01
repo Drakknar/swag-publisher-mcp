@@ -72,6 +72,7 @@ Each part is skipped (`action: skipped`) while its key is unset.
 
 ## Changelog (recent)
 
+- **0.10.0** (2026-10-31, review): `LAN_BYPASS_RANGES`, `PUBLIC_NO_AUTH_ALLOW` and the `# publisher: locked` marker enforce the rules above on the server; `get_site` is no longer marked read-only, since `show_secret` returns a credential.
 - **0.9.5** (2026-10-17, review): upstream validated before it goes into `proxy_pass` (`;`/braces/newlines could add nginx directives that `nginx -t` accepts), and replaced with a function (no `$1` expansion); `redirect_uris` must be single absolute URLs; `/mcp` refuses every request when `MCP_TOKEN` is unset (was open) and compares the token in constant time; `site_access` and `add_user` go through the same one-at-a-time queue as publish/remove; Authentik lists follow every page (a truncated binding/user list could make a user look orphaned); bindings are filtered by target client-side before any is planned for removal; a proxy application whose provider isn't the one for `https://<fqdn>` is refused (apply used to create a second provider the app didn't use); orphan users = bound by name only, group parents read as `parent` or `parents`; Cloudflare records matched by exact name client-side and TXT records no longer block publishing (several A records are refused); AdGuard answer = the most common answer on the domain, not the first rewrite found; LiteLLM config cut is refused if the file changed since planning (checked before any key/DB deletion); publish refuses confs that serve other names or not the requested domain; an unchanged conf gets `nginx -t` + reload on apply; Basic-auth/Authentik lines keep their indent after blank lines; conf-backup lookup sorted by timestamp.
 - **0.9.4** (2026-10-17): proxy-provider PATCHes send the provider's current `mode` (`patchProvider`); without it Authentik answered 400 "Internal host cannot be empty when forward auth is disabled".
 
@@ -87,6 +88,12 @@ Image: `ghcr.io/drakknar/swag-publisher-mcp`, port 8080. Mounts:
 | `/var/run/docker.sock` | `nginx -t`/reload in SWAG, restarting ddns-updater and LiteLLM, listing containers for `remove_site` |
 | `/litellm` | `remove_site` edits `litellm_config.yaml` |
 | `/templates` (read-only) | unRAID templates: `remove_site` reports them; they hold secrets, so only names and paths are read out |
+
+Server-side rules (they hold whatever the caller sends):
+
+- `lan_bypass` writes `LAN_BYPASS_RANGES`, by default `LAN_RANGES` without Docker's 172.16.0.0/12 networks, so containers don't skip Authentik.
+- `visibility=public` with `auth=none` is refused unless the subdomain is in `PUBLIC_NO_AUTH_ALLOW` or the conf is already public with no login. An OpenID site looks like that in nginx, so it passes this check.
+- A conf with the line `# publisher: locked` can't be published or removed through this tool, and `list_sites` and `get_site` show `locked: true`. Use it for sites whose loss would break access (the Authentik site, the editor) or that carry a hand-narrowed allow-list. `site_access` still works, since it changes only who may use the Authentik app.
 
 Required variables: `MCP_TOKEN`, `DOMAINS`, `LAN_HOST`, `LAN_RANGES`, `ADGUARD_URL`, `AUTHENTIK_URL`, `AUTHENTIK_PUBLIC_URL`, `BASIC_AUTH_USERS`. The server won't start without the addresses, and without `MCP_TOKEN` every `/mcp` request gets 401.
 

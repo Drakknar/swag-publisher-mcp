@@ -1,9 +1,12 @@
 {
   "name": "swag-publisher-mcp",
-  "version": "0.9.5",
+  "version": "0.10.0",
   "private": true,
   "description": "MCP server that publishes a site: SWAG reverse proxy, Authentik, Cloudflare DNS, ddns-updater and AdGuard Home",
   "main": "server.js",
+  "scripts": {
+    "test": "node --test test/gates.test.js"
+  },
   "engines": {
     "node": ">=20"
   },
