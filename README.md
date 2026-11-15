@@ -1,5 +1,7 @@
 # swag-publisher MCP
 
+<img src="assets/icon.svg" alt="" width="96" align="right">
+
 Publishes or edits a site in one step, as an MCP tool (used through LiteLLM as `swag_publisher-*`):
 
 1. **Authentik** (optional): `authentik_proxy` creates a forward-auth proxy provider + application and attaches it to the embedded outpost; `openid` creates an OAuth2/OpenID provider + application and returns client id/secret and issuer for the app. Settings (flows, mappings, signing key) are copied from an existing provider.
