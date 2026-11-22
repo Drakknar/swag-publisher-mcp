@@ -11,7 +11,7 @@ const { publish, removeSite, serial } = require("./lib/publish");
 const access = require("./lib/access");
 const users = require("./lib/users");
 
-const INFO = { name: "swag-publisher", version: "0.9.5" };
+const INFO = { name: "swag-publisher", version: "0.10.1" };
 
 // Without MCP_TOKEN every request is refused: this endpoint can rewrite nginx, DNS and Authentik.
 function authorized(header) {
@@ -186,7 +186,7 @@ function registerTools(server) {
     {
       title: "Add a user for one app",
       description:
-        "Create an Authentik user who may use exactly one application: never an admin (type external, no groups, no roles), added to that app's allowed list (everyone already allowed keeps access). " +
+        "Create an Authentik user who may use exactly one application: never an admin (type internal, no groups, no roles; the Authentik app library lists only its own apps), added to that app's allowed list (everyone already allowed keeps access). " +
         `No password is handled here: the new user sets it with "Forgot password?" on the login page (${config.authentikPublicUrl}), which emails them a link; the result says what to tell them. ` +
         "Before calling, ASK the user what they haven't already said: the username, the display name, the email (required) and the app (site subdomain or Authentik application slug). " +
         "Two steps: first call without apply and show the plan, including any warning about other apps open to everyone; call again with apply=true only after the user confirms. To give an existing user another app, use site_access.",
